@@ -1,0 +1,14 @@
+version: '3'
+services:
+  mssql: 
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${DB_PASSWORD}"
+    image: docker-mssql:0.1.0
+    ports:
+      - "8080:8080"
+      - "1433:1433"

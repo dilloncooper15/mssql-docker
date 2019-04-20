@@ -1,0 +1,23 @@
+sudo: required
+
+services:
+  - docker
+
+script:
+# Generate .env file.
+  - . ./shell_scripts/create_env_variables.sh 
+  - create_env_file "$DB_PASS"
+# Shorten commit sha.
+  - COMMIT_SHA="$(git rev-parse --short ${TRAVIS_COMMIT})"
+# Convert branch name to lowercase and concatenate shorten commit sha.
+  - IMAGE_TAG=$(echo "$TRAVIS_BRANCH" | tr '[:upper:]' '[:lower:]')-$COMMIT_SHA
+# Login to Docker CLI.
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+# Run docker-compose. Set the name to 'mssql', and override initial CMD to only run the server in the foreground.
+  - docker-compose run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
+# Manually run scripts in 'database_scripts'. 
+  - docker exec mssql "./shell_scripts/setup.sh"
+# Commit the running container to create a new image, and set the CMD to only start SQL Server with the static dataset in place.
+  - docker commit -c 'CMD ["sqlservr"]' mssql "velveetacheese/mssql-docker:$IMAGE_TAG"
+# Push the image to Docker Hub.
+  - docker push velveetacheese/mssql-docker:$IMAGE_TAG
