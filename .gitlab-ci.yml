@@ -1,0 +1,53 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - publish
+
+
+
+################ Anchors ################
+.shared_set_master_image: &set_master_image |
+  MASTER_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+
+# Anchor to install pip and use pip to install docker-compose.
+.shared_install_docker_compose: &install_docker_compose |
+  apk add --no-cache py2-pip > /dev/null 2>&1
+  apk add python2-dev > /dev/null 2>&1
+  apk add gcc > /dev/null 2>&1
+  apk add musl-dev > /dev/null 2>&1
+  apk add libffi-dev > /dev/null 2>&1
+  apk add openssl-dev > /dev/null 2>&1
+  apk add make > /dev/null 2>&1
+  pip install docker-compose > /dev/null 2>&1
+
+# Anchor to login to registry.gitlab.com.
+.shared_docker_login: &docker_login |
+  docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+# Generate .env file.
+.shared_generate_env: &generate_env |
+  . ./shell_scripts/create_env_variables.sh 
+  create_env_file "$DB_PASS"
+
+# Template for publishing image to GitLab Registry.
+.shared_publish_template: &publish_template |
+  stage: publish
+  before_script:
+    - *docker_login
+    - *install_docker_compose
+
+
+
+################ Publish ################
+publish_master_branch:
+  <<: *publish_template
+  script:
+    - *generate_env
+    - *set_master_image
+    - docker-compose run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
+    - docker exec mssql "./shell_scripts/setup.sh"
+    - docker commit -c 'CMD ["sqlservr"]' mssql "velveetacheese/mssql-docker:$MASTER_IMAGE"
+    - docker push velveetacheese/mssql-docker:$MASTER_IMAGE
