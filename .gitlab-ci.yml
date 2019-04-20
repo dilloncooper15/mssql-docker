@@ -6,8 +6,6 @@ services:
 stages:
   - publish
 
-
-
 ################ Anchors ################
 .shared_set_master_image: &set_master_image |
   MASTER_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
@@ -39,15 +37,16 @@ stages:
     - *docker_login
     - *install_docker_compose
 
-
-
 ################ Publish ################
-publish_master_branch:
+publish_feature_branches:
   <<: *publish_template
   script:
     - *generate_env
     - *set_master_image
     - docker-compose run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
     - docker exec mssql "./shell_scripts/setup.sh"
-    - docker commit -c 'CMD ["sqlservr"]' mssql "velveetacheese/mssql-docker:$MASTER_IMAGE"
-    - docker push velveetacheese/mssql-docker:$MASTER_IMAGE
+    - docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_IMAGE
+    - docker push $MASTER_IMAGE
+  only:
+    refs:
+      - master
