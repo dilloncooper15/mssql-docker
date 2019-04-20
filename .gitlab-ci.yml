@@ -39,7 +39,10 @@ stages:
 
 ################ Publish ################
 publish_feature_branches:
-  <<: *publish_template
+  stage: publish
+  before_script:
+    - *docker_login
+    - *install_docker_compose
   script:
     - *generate_env
     - *set_master_image
