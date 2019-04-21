@@ -121,4 +121,5 @@ publish_master_branch:
     - *publish_images_template
     - *push_to_registry_master_tag
   only:
-    - /^(?=.*(master))(?=.*\/(\d+\.\d+\.\d+)$).*$/
+    refs:
+      - master
