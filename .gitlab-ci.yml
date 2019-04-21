@@ -7,19 +7,9 @@ stages:
   - publish
 
 ################ Anchors ################
+# Anchor to create master tag =
 .shared_set_master_tag: &set_master_tag |
   MASTER_TAG="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-
-# Anchor to install pip and use pip to install docker-compose.
-.shared_install_docker_compose: &install_docker_compose |
-  apk add --no-cache py2-pip > /dev/null 2>&1
-  apk add python2-dev > /dev/null 2>&1
-  apk add gcc > /dev/null 2>&1
-  apk add musl-dev > /dev/null 2>&1
-  apk add libffi-dev > /dev/null 2>&1
-  apk add openssl-dev > /dev/null 2>&1
-  apk add make > /dev/null 2>&1
-  pip install docker-compose > /dev/null 2>&1
 
 # Anchor to login to registry.gitlab.com.
 .shared_docker_login: &docker_login |
@@ -30,6 +20,23 @@ stages:
   . ./shell_scripts/create_env_variables.sh 
   create_env_file $DB_PASS
 
+# Anchor to build mssql image and run setup.sh, creating the database, inserting mock data, 
+# creating foreign keys, creating stored procedures, enabling change tracking and snapshot retention.
+.shared_build_image_and_run_setup_script: &build_image_and_run_setup_script |
+  docker build -t mssql .
+  docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASS -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
+  docker exec mssql "./shell_scripts/setup.sh"
+
+# Anchor to push an image to the registry with a tag of 'latest'
+.shared_push_to_registry_latest_tag: &push_to_registry_latest_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $CI_REGISTRY_IMAGE
+  docker push $CI_REGISTRY_IMAGE
+
+# Anchor to push an image to the registry with master tag
+.shared_push_to_registry_master_tag: &push_to_registry_master_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_TAG
+  docker push $MASTER_TAG
+
 # Template for publishing image to GitLab Registry.
 .shared_publish_template: &publish_template |
   stage: publish
@@ -38,19 +45,13 @@ stages:
 
 ################ Publish ################
 publish_master_branch:
-  stage: publish
-  before_script:
-    - *docker_login
+  <<: *publish_template
   script:
     - *generate_env
     - *set_master_tag
-    - docker build -t mssql . 
-    - docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASS -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
-    - docker exec mssql "./shell_scripts/setup.sh"
-    - docker commit -c 'CMD ["sqlservr"]' mssql $CI_REGISTRY_IMAGE
-    - docker push $CI_REGISTRY_IMAGE
-    - docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_TAG
-    - docker push $MASTER_TAG
+    - *build_image_and_run_setup_script
+    - *push_to_registry_latest_tag
+    - *push_to_registry_master_tag
   only:
     refs:
       - master
