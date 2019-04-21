@@ -7,9 +7,55 @@ stages:
   - publish
 
 ################ Anchors ################
-# Anchor to create master tag =
-.shared_set_master_tag: &set_master_tag |
-  MASTER_TAG="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+
+###########################
+# Docker Tagging Anchors
+###########################
+
+# Anchor to create develop image name and tag.
+.shared_set_develop_tag: &set_develop_tag |
+  DEVELOP_IMAGE="$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA"
+
+# Anchor to create non-master branch image name tags.
+.shared_set_branch_tag: &set_branch_tag |
+  BRANCH_TAG="$(echo $CI_COMMIT_REF_NAME | cut -f2 -d/)-$CI_COMMIT_SHORT_SHA"
+  BRANCH_IMAGE="$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$BRANCH_TAG"
+
+# Anchor to create master image name and tag.
+.shared_set_master_image_and_tag: &set_master_image_and_tag |
+  MASTER_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+
+# Anchor to build mssql image and run setup.sh, creating the database, inserting mock data, 
+# creating foreign keys, creating stored procedures, enabling change tracking and snapshot retention.
+.shared_build_image_and_run_setup_script: &build_image_and_run_setup_script |
+  docker build -t mssql .
+  docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASS -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
+  docker exec mssql "./shell_scripts/setup.sh"
+
+# Anchor to push an image to the registry with branch tag (used for all branches except Master and Develop).
+.shared_push_to_registry_non_dev_and_master_branch_tag: &push_to_registry_non_dev_and_master_branch_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $BRANCH_IMAGE
+  docker push $BRANCH_IMAGE
+
+# Anchor to push an image to the registry with develop tag.
+.shared_push_to_registry_develop_tag: &push_to_registry_develop_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $BRANCH_IMAGE
+  docker push $BRANCH_IMAGE
+
+# Anchor to push an image to the registry with master tag
+.shared_push_to_registry_master_tag: &push_to_registry_master_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_IMAGE
+  docker push $MASTER_IMAGE
+
+# Anchor to push an image to the registry with a tag of 'latest'
+.shared_push_to_registry_latest_tag: &push_to_registry_latest_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $CI_REGISTRY_IMAGE
+  docker push $CI_REGISTRY_IMAGE
+
+
+###########################
+# Docker Util Anchors
+###########################
 
 # Anchor to login to registry.gitlab.com.
 .shared_docker_login: &docker_login |
@@ -20,38 +66,59 @@ stages:
   . ./shell_scripts/create_env_variables.sh 
   create_env_file $DB_PASS
 
-# Anchor to build mssql image and run setup.sh, creating the database, inserting mock data, 
-# creating foreign keys, creating stored procedures, enabling change tracking and snapshot retention.
-.shared_build_image_and_run_setup_script: &build_image_and_run_setup_script |
-  docker build -t mssql .
-  docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASS -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
-  docker exec mssql "./shell_scripts/setup.sh"
 
-# Anchor to push an image to the registry with a tag of 'latest'
-.shared_push_to_registry_latest_tag: &push_to_registry_latest_tag |
-  docker commit -c 'CMD ["sqlservr"]' mssql $CI_REGISTRY_IMAGE
-  docker push $CI_REGISTRY_IMAGE
-
-# Anchor to push an image to the registry with master tag
-.shared_push_to_registry_master_tag: &push_to_registry_master_tag |
-  docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_TAG
-  docker push $MASTER_TAG
+###########################
+# Templates
+###########################
 
 # Template for publishing image to GitLab Registry.
-.shared_publish_template: &publish_template
+.shared_publish_docker_login: &publish_docker_login
   stage: publish
   before_script:
     - *docker_login
 
-################ Publish ################
-publish_master_branch:
-  <<: *publish_template
+# Template for publishing images to GitLab Registry.
+.shared_publish_images_template: &publish_images_template
+  stage: publish
   script:
     - *generate_env
-    - *set_master_tag
+    - *set_master_image_and_tag
     - *build_image_and_run_setup_script
     - *push_to_registry_latest_tag
-    - *push_to_registry_master_tag
-  only:
+
+
+
+################ Publish ################
+publish_non_dev_and_master_branches:
+  <<: *publish_docker_login
+  script:
+    <<: *publish_images_template
+    - *push_to_registry_non_dev_and_master_branch_tag
+  except:
     refs:
       - master
+      - develop
+      - /^(\d+\.)?(\d+\.)?(\d+-rc\.\d+)$/
+  artifacts:
+    expire_in: 1 day
+
+
+publish_develop_branch:
+  <<: *publish_docker_login
+  script:
+    <<: *publish_images_template
+    - *push_to_registry_develop_tag
+  only:
+    refs:
+      - develop
+  artifacts:
+    expire_in: 2 weeks
+
+
+publish_master_branch:
+  <<: *publish_docker_login
+  script:
+    <<: *publish_images_template
+    - *push_to_registry_master_tag
+  only:
+    - /^(?=.*(master))(?=.*\/(\d+\.\d+\.\d+)$).*$/
