@@ -35,18 +35,17 @@ stages:
   stage: publish
   before_script:
     - *docker_login
-    - *install_docker_compose
 
 ################ Publish ################
 publish_master_branch:
   stage: publish
   before_script:
     - *docker_login
-    - *install_docker_compose
   script:
     - *generate_env
     - *set_master_tag
-    - docker-compose -f docker-compose.prod.yml run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
+    - docker build -t mssql . 
+    - docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASS -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
     - docker exec mssql "./shell_scripts/setup.sh"
     - docker commit -c 'CMD ["sqlservr"]' mssql $CI_REGISTRY_IMAGE
     - docker push $CI_REGISTRY_IMAGE
