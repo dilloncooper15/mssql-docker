@@ -77,20 +77,16 @@ stages:
   before_script:
     - *docker_login
 
-# Template for publishing images to GitLab Registry.
-.shared_publish_images_template: &publish_images_template |
-  *generate_env
-  *set_master_image_and_tag
-  *build_image_and_run_setup_script
-  *push_to_registry_latest_tag
-
 
 
 ################ Publish ################
 publish_non_dev_and_master_branches:
   <<: *publish_docker_login_template
   script:
-    - *publish_images_template
+    - *generate_env
+    - *set_master_image_and_tag
+    - *build_image_and_run_setup_script
+    - *push_to_registry_latest_tag
     - *push_to_registry_non_dev_and_master_branch_tag
   except:
     refs:
@@ -103,7 +99,10 @@ publish_non_dev_and_master_branches:
 publish_develop_branch:
   <<: *publish_docker_login_template
   script:
-    - *publish_images_template
+    - *generate_env
+    - *set_master_image_and_tag
+    - *build_image_and_run_setup_script
+    - *push_to_registry_latest_tag
     - *push_to_registry_develop_tag
   only:
     refs:
@@ -115,7 +114,10 @@ publish_develop_branch:
 publish_master_branch:
   <<: *publish_docker_login_template
   script:
-    - *publish_images_template
+    - *generate_env
+    - *set_master_image_and_tag
+    - *build_image_and_run_setup_script
+    - *push_to_registry_latest_tag
     - *push_to_registry_master_tag
   only:
     refs:
