@@ -48,6 +48,7 @@ publish_master_branch:
     - *set_master_tag
     - docker-compose -f docker-compose.prod.yml run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
     - docker exec mssql "./shell_scripts/setup.sh"
+    - docker commit -c 'CMD ["sqlservr"]' mssql $CI_REGISTRY_IMAGE
     - docker push $CI_REGISTRY_IMAGE
     - docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_TAG
     - docker push $MASTER_TAG
