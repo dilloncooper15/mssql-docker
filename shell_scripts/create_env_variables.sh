@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 create_env_file() {
-    if [ $# -ne 1 ]; then 
-        echo "ERROR: Please provide a password for the database."
+    if [ $# -ne 1 ]; then
+        echo "ERROR: Expected 1 argument, but $# were provided. Exiting."
+        echo "\n 
+        Admin Password: <parameter 1> \n"
         return
     else
         echo "Creating new .env file!"

@@ -14,7 +14,7 @@ script:
 # Login to Docker CLI.
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
 # Run docker-compose. Set the name to 'mssql', and override initial CMD to only run the server in the foreground.
-  - docker-compose run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
+  - docker-compose -f docker-compose.prod.yml run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
 # Manually run scripts in 'database_scripts'. 
   - docker exec mssql "./shell_scripts/setup.sh"
 # Commit the running container to create a new image, and set the CMD to only start SQL Server with the static dataset in place.

@@ -7,8 +7,8 @@ stages:
   - publish
 
 ################ Anchors ################
-.shared_set_master_image: &set_master_image |
-  MASTER_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+.shared_set_master_tag: &set_master_tag |
+  MASTER_TAG="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
 
 # Anchor to install pip and use pip to install docker-compose.
 .shared_install_docker_compose: &install_docker_compose |
@@ -28,7 +28,7 @@ stages:
 # Generate .env file.
 .shared_generate_env: &generate_env |
   . ./shell_scripts/create_env_variables.sh 
-  create_env_file "$DB_PASS"
+  create_env_file $DB_PASS
 
 # Template for publishing image to GitLab Registry.
 .shared_publish_template: &publish_template |
@@ -45,11 +45,12 @@ publish_master_branch:
     - *install_docker_compose
   script:
     - *generate_env
-    - *set_master_image
-    - docker-compose run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
+    - *set_master_tag
+    - docker-compose -f docker-compose.prod.yml run -d --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql
     - docker exec mssql "./shell_scripts/setup.sh"
-    - docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_IMAGE
-    - docker push $MASTER_IMAGE
+    - docker push $CI_REGISTRY_IMAGE
+    - docker commit -c 'CMD ["sqlservr"]' mssql $MASTER_TAG
+    - docker push $MASTER_TAG
   only:
     refs:
       - master
