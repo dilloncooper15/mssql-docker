@@ -5,7 +5,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "${DB_PASSWORD}"
-    image: registry.gitlab.com/dillonc/mssql-docker:018fdba0
+    image: registry.gitlab.com/dillonc/mssql-docker:latest
     ports:
       - "8080:8080"
       - "1433:1433"

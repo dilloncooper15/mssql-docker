@@ -18,13 +18,13 @@ In order to authenticate with the database, you will need to create a `.env` fil
 2. `create_env_file <INSERT PASSWORD HERE>`
 
 
-# Creating the database within a Docker container
-To create and run the database image inside of a Docker container, confirm you have Docker already installed on your computer and port `8080` is not already allocated to another program. Then, run the following command: `docker-compose down && docker-compose up -d;`
+# Running MS SQL Server image from local build
+To create and run the database image inside of a Docker container, confirm you have Docker already installed on your computer and port `8080` is not already allocated to another program. Then, run the following command: `docker-compose -f docker-compose.prod.yml up -d --build;;`
 
 
-# Running published image locally
-Please note, if you have a `build` step in your `Dockerfile`, and you wish to consume an image from a repository (i.e. Docker Hub or GitLab Registry), you will have to have the image pulled already or, if you do not have it pulled down already, simply perform a `docker pull <INSERT DOCKER IMAGE FROM REPOSITORY HERE>` before executing `docker-compose up`. If you do not have the image pulled down before running `docker-compose up`, the build stage, within your `docker-compose.yml`, will take precedence, resulting in an image being created from your local `Dockerfile` and not the remote image. 
-1. `docker run -d -p 1433:1433 -p 8080:8080 --name <INSERT DESIRED CONTAINER NAME> <INSERT DOCKER IMAGE FROM REPOSITORY HERE>;`
+# Running MS SQL Server image from remote repository image
+Please note, `docker-compose.yml` will build the latest image pushed to the GitLab Repository. If you want to target a specific build, simply change the image's value.
+1. `docker-compose up -d --build;`
 2. `docker exec -it <INSERT DESIRED CONTAINER NAME> bash`
 3. `sqlcmd -S localhost -U sa -P <INSERT PASSWORD SET IN .env FILE>`
 4. 
@@ -43,7 +43,7 @@ If you wish not to perform a query by exec'ing into the container, you can open 
 6. Database: `<INSERT NAME OF DATABASE HERE>` (Optionally, you can leave this set to `<Default>`, if you wish).
 
 **FOR EXAMPLE**: 
-1. `docker run -d -p 1433:1433 -p 8080:8080 --name mssql registry.gitlab.com/dillonc/mssql-docker:75b8e40f;`
+1. `docker-compose up -d --build`
 2. `docker exec -it mssql bash`
 3. `sqlcmd -S localhost -U sa -P SuperSecretPassword123`
 NOTE: You can also create an environment variable and call it: `export querydb="sqlcmd -S localhost -U sa -P SuperSecretPassword123" && $querydb`.

@@ -19,7 +19,7 @@ CREATE TABLE [dbo].[Address]
     [Country] [varchar](50) NULL, 
     [CreatedBy] [varchar](100) NOT NULL, 
     [CreatedDate] [datetime] NOT NULL, 
-    [ModifiedDate] [datetime] NOT NULL)
+    [ModifiedDate] [datetime] NOT NULL);
 
 
 /****** Object:  Table [dbo].[Customer] ******/
@@ -32,10 +32,20 @@ CREATE TABLE [dbo].[Customer]
     [FirstName] [varchar](100) NOT NULL, 
     [MiddleName] [varchar](100) NULL, 
     [LastName] [varchar](100) NOT NULL,
-    [AddressID] [int] NOT NULL,
     [PhoneNumber] [varchar](20) NOT NULL, 
     [PhoneNumberExt] [varchar](10) NULL, 
     [Email] [varchar](100) NULL,
     [CreatedBy] [varchar](100) NOT NULL, 
     [CreatedDate] [datetime] NOT NULL, 
-    [ModifiedDate] [datetime] NOT NULL)
+    [ModifiedDate] [datetime] NOT NULL);
+
+
+/****** Object:  Table [dbo].[CustomerAddress] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CustomerAddress]
+    ([ID] [int] IDENTITY(1,1) PRIMARY KEY,
+    [CustomerID] INT NOT NULL,
+    [AddressID] INT NOT NULL);
