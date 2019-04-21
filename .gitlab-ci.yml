@@ -38,7 +38,7 @@ stages:
   docker push $MASTER_TAG
 
 # Template for publishing image to GitLab Registry.
-.shared_publish_template: &publish_template |
+.shared_publish_template: &publish_template
   stage: publish
   before_script:
     - *docker_login
