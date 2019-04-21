@@ -79,12 +79,10 @@ stages:
 
 # Template for publishing images to GitLab Registry.
 .shared_publish_images_template: &publish_images_template |
-  stage: publish
-  script:
-    - *generate_env
-    - *set_master_image_and_tag
-    - *build_image_and_run_setup_script
-    - *push_to_registry_latest_tag
+  *generate_env
+  *set_master_image_and_tag
+  *build_image_and_run_setup_script
+  *push_to_registry_latest_tag
 
 
 
@@ -98,7 +96,6 @@ publish_non_dev_and_master_branches:
     refs:
       - master
       - develop
-      - /^(\d+\.)?(\d+\.)?(\d+-rc\.\d+)$/
   artifacts:
     expire_in: 1 day
 
