@@ -53,8 +53,8 @@ stages:
 
 # Anchor to push an image to the registry with develop tag.
 .shared_push_to_registry_develop_tag: &push_to_registry_develop_tag |
-  docker commit -c 'CMD ["sqlservr"]' mssql $BRANCH_IMAGE
-  docker push $BRANCH_IMAGE
+  docker commit -c 'CMD ["sqlservr"]' mssql $DEVELOP_IMAGE
+  docker push $DEVELOP_IMAGE
 
 # Anchor to push an image to the registry with master tag
 .shared_push_to_registry_master_tag: &push_to_registry_master_tag |
