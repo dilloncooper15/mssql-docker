@@ -43,7 +43,7 @@ stages:
 # creating foreign keys, creating stored procedures, enabling change tracking and snapshot retention.
 .shared_build_image_and_run_setup_script: &build_image_and_run_setup_script |
   docker build -t mssql .
-  docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASSWORD -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
+  docker run --rm -d -e ACCEPT_EULA=Y -e SA_PASSWORD=Tmtpass123 -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
   docker exec mssql "./shell_scripts/setup.sh"
 
 # Anchor to push an image to the registry with branch tag (used for all branches except Master and Develop).
@@ -89,7 +89,7 @@ publish_non_dev_and_master_branches:
     - *push_to_registry_non_dev_and_master_branch_tag
   except:
     refs:
-      - master
+      - /^(?=.*(master))(?=.*\/(\d+\.\d+\.\d+)$).*$/
       - develop
   artifacts:
     expire_in: 1 day
@@ -118,5 +118,4 @@ publish_master_branch:
     - *push_to_registry_latest_tag
     - *push_to_registry_master_tag
   only:
-    refs:
-      - master
+    - /^(?=.*(master))(?=.*\/(\d+\.\d+\.\d+)$).*$/
