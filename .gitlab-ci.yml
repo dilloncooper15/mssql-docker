@@ -89,7 +89,8 @@ publish_non_dev_and_master_branches:
     - *push_to_registry_non_dev_and_master_branch_tag
   except:
     refs:
-      - /^(?=.*(master))(?=.*\/(\d+\.\d+\.\d+)$).*$/
+      - /^(\d+\.\d+\.\d+)/
+      - master
       - develop
   artifacts:
     expire_in: 1 day
@@ -118,4 +119,4 @@ publish_master_branch:
     - *push_to_registry_latest_tag
     - *push_to_registry_master_tag
   only:
-    - /^(?=.*(master))(?=.*\/(\d+\.\d+\.\d+)$).*$/
+    - /^(\d+\.\d+\.\d+)/
