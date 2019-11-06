@@ -11,6 +11,7 @@
 </p>
 
 
+
 # Generating .env file
 In order to authenticate with the database, you will need to create a `.env` file by executing the following steps:
 0. Navigate to the project's directory.
