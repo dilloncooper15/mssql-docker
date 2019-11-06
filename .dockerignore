@@ -1,2 +1,8 @@
 logs/
 README.md
+.travis.yml
+.gitlab-ci.yml
+.gitignore
+docker-compose.prod.yml
+docker-compose.yml
+Dockerfile
