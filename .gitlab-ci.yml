@@ -35,6 +35,12 @@ stages:
 .shared_set_develop_image_and_tag: &set_develop_image_and_tag |
   DEVELOP_IMAGE="$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA"
 
+# Anchor to create release candidate name and tag.
+.shared_set_release_candidate_image_and_tag: &set_release_candidate_image_and_tag |
+  RELEASE_CANDIDATE_NUMBER=$(git rev-list --count origin/develop...origin/$CI_COMMIT_REF_NAME) && RELEASE_CANDIDATE_NUMBER=$((RELEASE_CANDIDATE_NUMBER+1))
+  RELEASE_CANDIDATE_TAG_POPULATED="$(echo $CI_COMMIT_REF_NAME | cut -f2 -d/)-rc$RELEASE_CANDIDATE_NUMBER"
+  RELEASE_CANDIDATE_IMAGE="$CI_REGISTRY_IMAGE/release:$RELEASE_CANDIDATE_TAG_POPULATED"
+
 # Anchor to create master image name and tag.
 .shared_set_master_image_and_tag: &set_master_image_and_tag |
   MASTER_IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
@@ -43,7 +49,7 @@ stages:
 # creating foreign keys, creating stored procedures, enabling change tracking and snapshot retention.
 .shared_build_image_and_run_setup_script: &build_image_and_run_setup_script |
   docker build -t mssql .
-  docker run --rm -d -e ACCEPT_EULA=Y -e SA_PASSWORD=Tmtpass123 -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
+  docker run -d -e ACCEPT_EULA=Y -e SA_PASSWORD=$DB_PASSWORD -p 1433:1433 -p 8080:8080 --name mssql --entrypoint "/opt/mssql/bin/sqlservr" mssql;
   docker exec mssql "./shell_scripts/setup.sh"
 
 # Anchor to push an image to the registry with branch tag (used for all branches except Master and Develop).
@@ -53,8 +59,13 @@ stages:
 
 # Anchor to push an image to the registry with develop tag.
 .shared_push_to_registry_develop_tag: &push_to_registry_develop_tag |
-  docker commit -c 'CMD ["sqlservr"]' mssql $BRANCH_IMAGE
-  docker push $BRANCH_IMAGE
+  docker commit -c 'CMD ["sqlservr"]' mssql $DEVELOP_IMAGE
+  docker push $DEVELOP_IMAGE
+
+# Anchor to push an image to the registry with release candidate tag.
+.shared_push_to_registry_release_candidate_tag: &push_to_registry_release_candidate_tag |
+  docker commit -c 'CMD ["sqlservr"]' mssql $RELEASE_CANDIDATE_IMAGE
+  docker push $RELEASE_CANDIDATE_IMAGE
 
 # Anchor to push an image to the registry with master tag
 .shared_push_to_registry_master_tag: &push_to_registry_master_tag |
@@ -108,6 +119,18 @@ publish_develop_branch:
       - develop
   artifacts:
     expire_in: 2 weeks
+
+
+publish_populated_image_release_candidate_branch:
+  <<: *publish_docker_login_template
+  script:
+    - *generate_env
+    - *set_release_candidate_image_and_tag
+    - *build_image_and_run_setup_script
+    - *push_to_registry_release_candidate_tag
+  only:
+    - /^(\d+\.)?(\d+\.)?(\d+-rc\.\d+)$/
+    - /^release\/.*$/
 
 
 publish_master_branch:
