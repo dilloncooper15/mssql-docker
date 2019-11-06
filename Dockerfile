@@ -1,5 +1,6 @@
 # Run Latest Linux image SQL Server from Microsoft.
 FROM mcr.microsoft.com/mssql/server
+USER root
 
 # Change current working directory.
 WORKDIR /usr/src/app
@@ -9,10 +10,8 @@ RUN apt-get -y update  && \
         apt-get install -y curl && \
         curl -sL https://deb.nodesource.com/setup_6.x | bash - && \
         apt-get install -y nodejs && \
+        apt-get -y install vim && \
         npm install tedious
-
-# Update packages, install curl, node/npm, tedious.
-RUN apt-get -y update
 
 # Bundle app source.
 COPY . .
