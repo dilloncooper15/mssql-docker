@@ -13,10 +13,10 @@
 
 
 # Generating .env file
-In order to authenticate with the database, you will need to create a `.env` file by executing the following steps:
-0. Navigate to the project's directory.
-1. `. ./shell_scripts/create_env_variables.sh`
-2. `create_env_file <INSERT PASSWORD HERE>`
+In order to authenticate with the database, you will need to create a `.env` file by executing the following steps: <br>
+1. Navigate to the project's directory.
+2. `. ./shell_scripts/create_env_variables.sh`
+3. `create_env_file <INSERT PASSWORD HERE>`
 
 
 # Running MS SQL Server image from local build
@@ -28,13 +28,15 @@ Please note, `docker-compose.yml` will build the latest image pushed to the GitL
 1. `docker-compose up -d --build;`
 2. `docker exec -it <INSERT DESIRED CONTAINER NAME> bash`
 3. `sqlcmd -S localhost -U sa -P <INSERT PASSWORD SET IN .env FILE>`
-4. 
-    1> `USE <INSERT DATABASE NAME HERE>`
-    2> `SELECT * FROM <INSERT DESIRED TABLE NAME>`
-    3> `GO`
-*OR* 
-    1> `SELECT * FROM <INSERT DATABASE NAME HERE>.dbo.<INSERT DESIRED TABLE NAME>;`
-    2> `go`
+4. Then, run the following three commands to query a table in your database: <br>
+> 1. `USE <INSERT DATABASE NAME HERE>`<br>
+> 2. `SELECT * FROM <INSERT DESIRED TABLE NAME>` <br>
+> 3. `GO` <br>
+
+*OR* <br>
+> 1. `SELECT * FROM <INSERT DATABASE NAME HERE>.dbo.<INSERT DESIRED TABLE NAME>;` <br>
+> 2. `go` <br>
+
 If you wish not to perform a query by exec'ing into the container, you can open `Azure Data Studio` or `SQL Server Management Studio`, and connect to the database by passing in the following:
 1. Connection type: `Microsoft SQL Server`
 2. Server: `localhost`
@@ -50,13 +52,15 @@ If you wish not to perform a query by exec'ing into the container, you can open 
 NOTE: You can also create an environment variable and call it: `export querydb="sqlcmd -S localhost -U sa -P SuperSecretPassword123" && $querydb`.
 This is equivalent to the command outlined in `step 3`.
 4. 
-    1> `USE ExampleDb`
-    2> `SELECT * FROM Customer`
-    3> `GO`
-*OR* 
-    1> `SELECT * FROM ExampleDb.dbo.Customer;`
-    2> `GO`
-Connection through `Azure Data Studio`:
+> 1. `USE ExampleDb` <br>
+> 2. `SELECT * FROM Customer` <br>
+> 3. `GO` <br>
+
+*OR* <br>
+> 1. `SELECT * FROM ExampleDb.dbo.Customer;` <br>
+> 2. `GO` <br>
+
+**Connection through `Azure Data Studio`**:
 1. Connection type: `Microsoft SQL Server`
 2. Server: `localhost`
 3. Authentication type: `SQL Login`
